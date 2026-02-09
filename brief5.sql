@@ -33,3 +33,9 @@ CREATE TABLE mouvements (
         FOREIGN KEY (id_produit)
         REFERENCES produits(id_produit)
 );
+
+select * from mouvements;
+
+
+ALTER TABLE produits
+DROP COLUMN en_rupture;

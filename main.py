@@ -39,11 +39,12 @@ def lister_categories():
         print(f"{id_cat} - {nom}")
    
 
-#fonction pour ajouter un produit
+# Fonction pour ajouter un produit
 def ajouter_produit():
     try:
         designation = input("Entrez le nom du produit : ").strip()
-        
+
+        #prix
         while True:
             try:
                 prix = float(input("Entrez le prix unitaire : "))
@@ -53,7 +54,8 @@ def ajouter_produit():
                     print("Le prix doit être positif.")
             except ValueError:
                 print("Veuillez entrer un nombre valide pour le prix.")
-        
+
+        #quantite
         while True:
             try:
                 quantite = int(input("Entrez la quantité en stock : "))
@@ -63,62 +65,68 @@ def ajouter_produit():
                     print("La quantité doit être positive.")
             except ValueError:
                 print("Veuillez entrer un nombre entier pour la quantité.")
-        
+
         # Choix de la catégorie
         lister_categories()
         while True:
             try:
                 id_categorie = int(input("Entrez l'ID de la catégorie : "))
-                curseur.execute("SELECT id_categorie FROM categories WHERE id_categorie = %s", (id_categorie,))
+                curseur.execute(
+                    "SELECT id_categorie FROM categories WHERE id_categorie = %s",
+                    (id_categorie,)
+                )
                 if curseur.fetchone():
                     break
                 else:
                     print("Catégorie inexistante. Réessayez.")
             except ValueError:
                 print("Veuillez entrer un nombre entier pour l'ID.")
-        
-        en_rupture = quantite < 5
-        
+
         sql = """
-        INSERT INTO produits (designation, prix_unitaire, quantite_stock, en_rupture, id_categorie)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO produits (designation, prix_unitaire, quantite_stock, id_categorie)
+        VALUES (%s, %s, %s, %s)
         """
-        curseur.execute(sql, (designation, prix, quantite, en_rupture, id_categorie))
+        curseur.execute(sql, (designation, prix, quantite, id_categorie))
         connexion.commit()
+
         print(f"Produit '{designation}' ajouté avec succès.")
-    
+
     except Exception as e:
         print("Erreur lors de l'ajout du produit :", e)
-
 
 
 # Fonction pour effectuer un mouvement de stock
 def mouvement_stock():
     try:
-        # Lister les produits disponibles
         curseur.execute("SELECT id_produit, designation, quantite_stock FROM produits")
         produits = curseur.fetchall()
+
         if not produits:
             print("Aucun produit trouvé.")
             return
-        
+
         print("\n--- Liste des produits ---")
         for pid, nom, stock in produits:
             print(f"{pid} - {nom} (Stock: {stock})")
-        
-        # Choix du produit
+
+        #id du produit
         while True:
             try:
                 id_produit = int(input("Entrez l'ID du produit : "))
-                curseur.execute("SELECT id_produit FROM produits WHERE id_produit = %s", (id_produit,))
-                if curseur.fetchone():
+                curseur.execute(
+                    "SELECT quantite_stock FROM produits WHERE id_produit = %s",
+                    (id_produit,)
+                )
+                resultat = curseur.fetchone()
+                if resultat:
+                    stock_actuel = resultat[0]
                     break
                 else:
                     print("Produit inexistant, réessayez.")
             except ValueError:
                 print("Veuillez entrer un nombre entier pour l'ID.")
-        
-        # Choix du type de mouvement
+
+        #type mouvement
         while True:
             type_mouvement = input("Type de mouvement (ENTREE / SORTIE) : ").strip().upper()
             if type_mouvement in ["ENTREE", "SORTIE"]:
@@ -126,7 +134,7 @@ def mouvement_stock():
             else:
                 print("Choix invalide. Tapez 'ENTREE' ou 'SORTIE'.")
         
-        # Quantité
+        #quantite
         while True:
             try:
                 quantite = int(input("Entrez la quantité : "))
@@ -136,22 +144,18 @@ def mouvement_stock():
                     print("La quantité doit être positive.")
             except ValueError:
                 print("Veuillez entrer un nombre entier pour la quantité.")
-        
-        # Vérifier stock pour une sortie
-        if type_mouvement == "SORTIE":
-            curseur.execute("SELECT quantite_stock FROM produits WHERE id_produit = %s", (id_produit,))
-            stock = curseur.fetchone()[0]
-            if stock < quantite:
-                print("Stock insuffisant ! Mouvement annulé.")
-                return
-        
-        # Ajouter le mouvement
+
+        if type_mouvement == "SORTIE" and stock_actuel < quantite:
+            print("Stock insuffisant ! Mouvement annulé.")
+            return
+
+        # Historisation du mouvement
         curseur.execute(
             "INSERT INTO mouvements (id_produit, type_mouvement, quantite) VALUES (%s, %s, %s)",
             (id_produit, type_mouvement, quantite)
         )
-        
-        # Mettre à jour le stock
+
+        # Mise à jour du stock
         if type_mouvement == "ENTREE":
             curseur.execute(
                 "UPDATE produits SET quantite_stock = quantite_stock + %s WHERE id_produit = %s",
@@ -162,20 +166,12 @@ def mouvement_stock():
                 "UPDATE produits SET quantite_stock = quantite_stock - %s WHERE id_produit = %s",
                 (quantite, id_produit)
             )
-        
-        # Mettre à jour en_rupture
-        curseur.execute(
-            "UPDATE produits SET en_rupture = quantite_stock < 5 WHERE id_produit = %s",
-            (id_produit,)
-        )
-        
-        # Valider la transaction
+
         connexion.commit()
-        print(f"Mouvement '{type_mouvement}' de {quantite} unités effectué pour le produit {id_produit}.")
-    
+        print(f"Mouvement '{type_mouvement}' de {quantite} unités effectué.")
+
     except Exception as e:
         print("Erreur MySQL :", e)
-
 
 
 # Lister tous les produits avec leur catégorie
