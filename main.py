@@ -1,20 +1,18 @@
 import mysql.connector
 
 # Connexion à MySQL
-connexion = mysql.connector.connect(
-    host="localhost",
-    user="root", 
-    password="tresbienmerci",
-    database="gestion_stock"
-)
-
-# Vérifiez si la connexion est réussie
-if connexion.is_connected():    
+try:
+    connexion = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="tresbienmerci",
+        database="gestion_stock"
+    )
+    curseur = connexion.cursor()
     print("Connecté à la base de données MySQL")
-else:    
-    print("Échec de la connexion à la base de données MySQL")
-
-curseur = connexion.cursor()
+except Exception as e:
+    print("Erreur de connexion :", e)
+    exit()
 
 
 
