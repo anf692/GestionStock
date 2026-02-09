@@ -48,7 +48,6 @@ La base de données est composée de **3 tables principales** :
 - `designation`
 - `prix_unitaire`
 - `quantite_stock`
-- `en_rupture`
 - `id_categorie` (FK)
 
 ### `mouvements`
@@ -78,7 +77,7 @@ La table `mouvements` joue le rôle de **table d’historisation** des entrées 
 
 ### Gestion des produits
 - Ajouter un produit en l’associant à une catégorie
-- Calcul automatique du statut `en_rupture` si le stock est inférieur à 5
+- Calcul automatique du statut si le stock est inférieur à 5
 
 ### Gestion des mouvements de stock
 - Ajouter une entrée ou une sortie de stock

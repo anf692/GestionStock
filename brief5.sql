@@ -13,7 +13,6 @@ CREATE TABLE produits (
     designation VARCHAR(150) NOT NULL,
     prix_unitaire DECIMAL(10,2) NOT NULL,
     quantite_stock INT NOT NULL DEFAULT 0,
-    en_rupture BOOLEAN NOT NULL DEFAULT FALSE,
     id_categorie INT NOT NULL,
 
     CONSTRAINT fk_produit_categorie
@@ -34,8 +33,5 @@ CREATE TABLE mouvements (
         REFERENCES produits(id_produit)
 );
 
-select * from mouvements;
+select * from produits;
 
-
-ALTER TABLE produits
-DROP COLUMN en_rupture;
