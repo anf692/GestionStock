@@ -92,6 +92,94 @@ def ajouter_produit():
     except Exception as e:
         print("Erreur lors de l'ajout du produit :", e)
 
+
+
+# Fonction pour effectuer un mouvement de stock
+def mouvement_stock():
+    try:
+        # Lister les produits disponibles
+        curseur.execute("SELECT id_produit, designation, quantite_stock FROM produits")
+        produits = curseur.fetchall()
+        if not produits:
+            print("Aucun produit trouvé.")
+            return
+        
+        print("\n--- Liste des produits ---")
+        for pid, nom, stock in produits:
+            print(f"{pid} - {nom} (Stock: {stock})")
+        
+        # Choix du produit
+        while True:
+            try:
+                id_produit = int(input("Entrez l'ID du produit : "))
+                curseur.execute("SELECT id_produit FROM produits WHERE id_produit = %s", (id_produit,))
+                if curseur.fetchone():
+                    break
+                else:
+                    print("Produit inexistant, réessayez.")
+            except ValueError:
+                print("Veuillez entrer un nombre entier pour l'ID.")
+        
+        # Choix du type de mouvement
+        while True:
+            type_mouvement = input("Type de mouvement (ENTREE / SORTIE) : ").strip().upper()
+            if type_mouvement in ["ENTREE", "SORTIE"]:
+                break
+            else:
+                print("Choix invalide. Tapez 'ENTREE' ou 'SORTIE'.")
+        
+        # Quantité
+        while True:
+            try:
+                quantite = int(input("Entrez la quantité : "))
+                if quantite > 0:
+                    break
+                else:
+                    print("La quantité doit être positive.")
+            except ValueError:
+                print("Veuillez entrer un nombre entier pour la quantité.")
+        
+        # Vérifier stock pour une sortie
+        if type_mouvement == "SORTIE":
+            curseur.execute("SELECT quantite_stock FROM produits WHERE id_produit = %s", (id_produit,))
+            stock = curseur.fetchone()[0]
+            if stock < quantite:
+                print("Stock insuffisant ! Mouvement annulé.")
+                return
+        
+        # Ajouter le mouvement
+        curseur.execute(
+            "INSERT INTO mouvements (id_produit, type_mouvement, quantite) VALUES (%s, %s, %s)",
+            (id_produit, type_mouvement, quantite)
+        )
+        
+        # Mettre à jour le stock
+        if type_mouvement == "ENTREE":
+            curseur.execute(
+                "UPDATE produits SET quantite_stock = quantite_stock + %s WHERE id_produit = %s",
+                (quantite, id_produit)
+            )
+        else:
+            curseur.execute(
+                "UPDATE produits SET quantite_stock = quantite_stock - %s WHERE id_produit = %s",
+                (quantite, id_produit)
+            )
+        
+        # Mettre à jour en_rupture
+        curseur.execute(
+            "UPDATE produits SET en_rupture = quantite_stock < 5 WHERE id_produit = %s",
+            (id_produit,)
+        )
+        
+        # Valider la transaction
+        connexion.commit()
+        print(f"Mouvement '{type_mouvement}' de {quantite} unités effectué pour le produit {id_produit}.")
+    
+    except Exception as e:
+        print("Erreur MySQL :", e)
+
+
+
 #fonction pour fermer la base de donnnees
 def fermeture():
     if connexion.is_connected():
@@ -106,7 +194,7 @@ def menu():
         print("1. Ajouter un categorie")
         print("2. Lister categorie")
         print("3. Ajouter un produit")
-        print("4. Rechercher apprenant")
+        print("4. Effectuer un mouvement")
         print("5. Supprimer un apprenant")
         print("6. Quitter")
         choix = input("Votre choix : ")
@@ -116,6 +204,8 @@ def menu():
             lister_categories()
         elif choix == "3":
             ajouter_produit()
+        elif choix == "4":
+            mouvement_stock()
         elif choix == "6":
             fermeture()
             print("Au revoir 👋")
