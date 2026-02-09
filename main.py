@@ -180,6 +180,47 @@ def mouvement_stock():
 
 
 
+# Lister tous les produits avec leur catégorie
+def lister_produits():
+    try:
+        sql = """
+        SELECT p.designation, p.prix_unitaire, p.quantite_stock, c.nom_categorie
+        FROM produits p
+        JOIN categories c ON p.id_categorie = c.id_categorie
+        """
+        curseur.execute(sql)
+        produits = curseur.fetchall()
+        
+        if not produits:
+            print("Aucun produit trouvé.")
+            return
+        
+        print("\n--- Liste des produits ---")
+        for nom, prix, stock, cat in produits:
+            print(f"{nom} - Prix: {prix:.2f} - Stock: {stock} - Catégorie: {cat}")
+    
+    except Exception as e:
+        print("Erreur MySQL :", e)
+
+
+# Lister les produits en alerte (stock < 5)
+def produits_en_alerte():
+    try:
+        sql = "SELECT designation, quantite_stock FROM produits WHERE quantite_stock < 5"
+        curseur.execute(sql)
+        alertes = curseur.fetchall()
+        
+        if not alertes:
+            print("Aucun produit en rupture ou en faible stock.")
+            return
+        
+        print("\n--- Produits en alerte (stock < 5) ---")
+        for nom, stock in alertes:
+            print(f" {nom} - Stock = {stock}")
+    
+    except Exception as e:
+        print(" Erreur MySQL :", e)
+
 #fonction pour fermer la base de donnnees
 def fermeture():
     if connexion.is_connected():
@@ -195,8 +236,9 @@ def menu():
         print("2. Lister categorie")
         print("3. Ajouter un produit")
         print("4. Effectuer un mouvement")
-        print("5. Supprimer un apprenant")
-        print("6. Quitter")
+        print("5. Lister les produits")
+        print("6. Produits en alerte")
+        print("7. Quitter")
         choix = input("Votre choix : ")
         if choix == "1":
             ajouter_categorie()
@@ -206,7 +248,11 @@ def menu():
             ajouter_produit()
         elif choix == "4":
             mouvement_stock()
+        elif choix == "5":
+            lister_produits()
         elif choix == "6":
+            produits_en_alerte()
+        elif choix == "7":
             fermeture()
             print("Au revoir 👋")
             break
