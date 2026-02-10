@@ -118,6 +118,7 @@ def mouvement_stock():
                     (id_produit,)
                 )
                 resultat = curseur.fetchone()
+
                 if resultat:
                     stock_actuel = resultat[0]
                     break
@@ -145,6 +146,7 @@ def mouvement_stock():
             except ValueError:
                 print("Veuillez entrer un nombre entier pour la quantité.")
 
+        #verifie pour les sortie de stocks s'il est insuffisant
         if type_mouvement == "SORTIE" and stock_actuel < quantite:
             print("Stock insuffisant ! Mouvement annulé.")
             return
